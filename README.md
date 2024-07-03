@@ -35,6 +35,10 @@ Primero que nada, necesitamos instalar una libreria que nos permita interactuar 
 crearemos un espacio virtual de python para no generar ningún conflicto con librerías que tengamos en el sistema u otros proyectos. En este espacio virtual podemos instalar telethon mediante pip.
 Va a ser necesario gestionar una base de datos, en este caso, el archivo csv. asi que usaré la libreria de pandas. Al principio crei que usar pandas para esto era como matar moscas a cañonazos, pero despues pensé que es posible que alguien tenga millones de suscriptores, en este caso, pandas suena como la opción ideal. Tambien debemos instalar pandas en nuestro espacio virtual.
 
-Para que el bot pueda interactuar con nuestro canal, debemos agregarlo como administrador al canal y necesitamos el id del canal. ¿Como obtenemos esto? primero vamos a iniciar sesion en Telegram con nuestras credenciales para poder interactuar con la API, para esto, seguimos el script que viene en la documentacion de tehethon. este script es login_user.py 
+Para que el bot pueda interactuar con nuestro canal, debemos agregarlo como administrador al canal y necesitamos el id del canal. ¿Como obtenemos esto? primero vamos a iniciar sesion en Telegram con nuestras credenciales para poder interactuar con la API, para esto, seguimos el script que viene en la documentacion de tehethon. Este script es login_user.py. Este script genera un archivo con extension .session, que es el que va a guardar la informacion de inicio de sesion, para que no tengamos que estar poniendo codigos cada que corramos el script del bot. no debe renombrarse ni cambiarse de ubicacion.
+
+Ahora sí, para obtener el id del canal, suponiendo que somos miembros de nuestro propio canal, podemos correr el script canal_id.py para obtener el ide de nuestro canal en pantalla, de aqui podemos guardarlo en algun otro lugar. tambien podriamos implementar este script al principio del bot si queremos automatizar aun más el proceso, pero yo lo dejé aparte.
+
+
 
 
