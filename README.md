@@ -26,6 +26,8 @@ Lo que necesitamos que haga el bot es que revise todos los días si es que a alg
 * El bot puede obtener el ID de usuario de los miembros (más sobre esto despues)
 * El bot puede renovar la suscripción de los usuarios.
 
+Ademas, vamos a añadir una uncion para notificar a los usuarios que su suscripcion está proxima a vencer.
+
 Ya con la idea de que queremos hacer, podemos empezar a configurar nuestro bot
 
 # The setup
@@ -37,8 +39,7 @@ Va a ser necesario gestionar una base de datos, en este caso, el archivo csv. as
 
 Para que el bot pueda interactuar con nuestro canal, debemos agregarlo como administrador al canal y necesitamos el id del canal. ¿Como obtenemos esto? primero vamos a iniciar sesion en Telegram con nuestras credenciales para poder interactuar con la API, para esto, seguimos el script que viene en la documentacion de tehethon. Este script es login_user.py. Este script genera un archivo con extension .session, que es el que va a guardar la informacion de inicio de sesion, para que no tengamos que estar poniendo codigos cada que corramos el script del bot. no debe renombrarse ni cambiarse de ubicacion.
 
-Ahora sí, para obtener el id del canal, suponiendo que somos miembros de nuestro propio canal, podemos correr el script canal_id.py para obtener el ide de nuestro canal en pantalla, de aqui podemos guardarlo en algun otro lugar. tambien podriamos implementar este script al principio del bot si queremos automatizar aun más el proceso, pero yo lo dejé aparte.
+Ahora sí, para obtener el id del canal, suponiendo que somos miembros de nuestro propio canal, podemos correr el script canal_id.py para obtener el ide de nuestro canal en pantalla, de aqui podemos guardarlo en algun otro lugar. Tambien podriamos implementar este script al principio del bot si queremos automatizar aun más el proceso, pero yo lo dejé aparte.
 
-
-
+Si el canal ya está hecho, debemos crear la base de datos de los usuarios ya existentes. Aqui sí se tendra que poner a mano las fechas de finalizacion de las suscripciones que ya se tienen, pero a partir de aqui, para los demas miembros que se unan será un poco más facil administrarlos on ayuda del bot. Para crear la base de datos hice el script create_db.py. Notese que las columnas de la base de datos incluyen el id del usuario (identiicador unico de telegram), la fecha en la que se unio el miembro al canal, los meses que se unió, la fecha de finalización y una llamada "Anuncio" que va a contener 0 o 1 y servira como un flag para saver si ya se le notificó a ese usuario que su suscripcion está por terminar.
 
