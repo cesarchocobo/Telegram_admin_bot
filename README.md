@@ -183,23 +183,15 @@ Finalmente, deje un comando para probar si el bot está en linea. implemente te 
         await client.send_message(myid, 'la prueba se ejecutó con exito')
 ```
 
-Todas estas funciones estan bien, pero hasta el momento no le hemos dicho al bot cuando activarlas, para esto debemos añadir los handlers al cliente de telegram usando regex para indicar como deben ser las entradas de texto para iniciar las funciones
 
-```
-    client.add_event_handler(prueba, events.NewMessage(pattern='/prueba'))  
-    client.add_event_handler(renovar, events.NewMessage(pattern=re.compile(r'^/renovar'), from_users = myid))
-    client.add_event_handler(lista, events.NewMessage(pattern='/lista', from_users = myid))    
-    client.add_event_handler(miembroid, events.NewMessage(pattern=re.compile(r'^/id'), from_users = myid))  
 
-```
 
-Elegí iniciar los handlers así en lugar de usar el adorno @ para el cliente de telegram por que más adelante vamos a necesitar quitar los handlers y volverlos a activar para evitar conflictos con la base de datos.
-
-Ahora empieza el loop de la funcion main. Este loop es el que va a revisar periodicamente si algun miembro debe eliminarse o si uno nuevo a entrado al canal. Quiero ahorrar en CPU y evitar que comandos se envien cuando se esta sobre escribiendo la base de datos con estos nuevos registros, asi que este loop se va a correr cada dos horas, por eso empezamos con la funcion wait de asyncio y quitamos los handlers de los comandos definidos antes. tambien ponemos el evento c_loop como no iniciado.
+Ahora se crea la funcion revisa_loop. Esta funcion va a estar dentro de un loop en la funcion main y es la que va a revisar periodicamente si algun miembro debe eliminarse o si uno nuevo a entrado al canal. Quiero ahorrar en CPU y evitar que comandos se envien cuando se esta sobre escribiendo la base de datos con estos nuevos registros, asi que este loop se va a correr cada dos horas (se hara en la funcion main), Primero quitamos los handlers de los comandos definidos antes y del comando /revisa que se definirá más adelate. Tambien ponemos el evento c_loop como no iniciado.
 
 ```
         await asyncio.sleep(7200)
 
+        client.remove_event_handler(revisa)
         client.remove_event_handler(renovar)
         client.remove_event_handler(lista)
         client.remove_event_handler(miembroid)
@@ -241,17 +233,12 @@ Comprobamos si a alguien ya se le passo la fecha y si es así, lo sacamos el can
                 logging.info(str(kick.first_name) + ' fue expulsado. ID: ' + str(kick.id))
                 await client.send_message(myid, 'La suscripción de '+ kick.first_name + ' terminó')
 ```
-Despues, revisamos si alguien está proximo a vencerse, en este caso puse tres dias, pero se puede cambiar al tiempo deseado. Cuando el programa detecta que le faltan tres dias a un miembro, le manda un aviso desde la cuenta del usuario (no desde el bot), asi que debemos inicializar el cliente del usuario. Despues, modifica su entrada en "Anuncio" de 0 a 1, para saber que ese usuario ya fue notificado y que no le vuelva a notificar (para esto era esa columna). Finalmente actualizamos la base de datos.
+Despues, revisamos si alguien está proximo a vencerse, en este caso puse tres dias, pero se puede cambiar al tiempo deseado. Cuando el programa detecta que le faltan tres dias a un miembro, se envía un aviso al administrador y se modifica su entrada en "Anuncio" de 0 a 1, para saber que ese usuario ya fue notificado y que no le vuelva a notificar (para esto era esa columna). Finalmente actualizamos la base de datos.
 
 
 ```
             if df.loc[i, 'Final'] < datetime.now() + timedelta(days = 3) and df.loc[i, 'Anuncio'] == 0:
                 dfd.at[i, 'Anuncio'] = 1
-                
-                await client_myid.start()
-                await client_myid.send_message(kick, 'Tu suscripcion a termina en 3 dias')
-                await client_myid.disconnect()
-
                 await client.send_message(myid, 'La suscripción de '+ kick.first_name + ' termina en 3 dias')
                 logging.info(str(kick.first_name) + 'fue avisado. ID: ' +  str(kick.id))
         df = dfd
@@ -292,14 +279,48 @@ Si se detecta un nuevo usuario, el bot le envía un mensaje al administrador dic
 ```
 Notese tambien la ultima linea de este código, contiene la funcion `c_loop.wait()`. Esto pausa el loop hasta que la variable c_loop cambie a puesta, lo que se hace con la funcion `c_loop.set()`. Esto quiere decir que el loop queda pausado hasta que el administrador envíe el numero de meses del nuevo registro. Hice esto para que la base de datos no se este sobreescribiendo en paralelo y gener conflictos o perdidas de información.
 
-Una vez que el administrador envío el numero de meses se reanuda el loop. Al final del loop, volvemos a activar los handlers de los comandos
+Una vez que el administrador envío el numero de meses se reanuda el codigo. Al final, volvemos a activar los handlers de los comandos
 
 ```
         client.add_event_handler(prueba, events.NewMessage(pattern='/prueba'))  
         client.add_event_handler(renovar, events.NewMessage(pattern=re.compile(r'^/renovar'), from_users = myid))
         client.add_event_handler(lista, events.NewMessage(pattern='/lista', from_users = myid))    
-        client.add_event_handler(miembroid, events.NewMessage(pattern=re.compile(r'^/id'), from_users = myid))  
+        client.add_event_handler(miembroid, events.NewMessage(pattern=re.compile(r'^/id'), from_users = myid))
+        client.add_event_handler(revisa, events.NewMessage(pattern='/revisa', from_users = [admin1, admin2]))
 ```
+
+Ahora definimos el comando /revisar 
+
+```
+    async def revisa(event_revisa):
+        await event_revisa.reply('Inicia revision')
+        await revisa_loop()
+        await event_revisa.reply('Terminó revision')    
+```
+
+cuando se ejecute este comando, se iniciará la funcion revisar_loop una vez.
+
+Todas estas funciones estan bien, pero hasta el momento no le hemos dicho al bot cuando activarlas, para esto debemos añadir los handlers al cliente de telegram usando regex para indicar como deben ser las entradas de texto para iniciar las funciones
+
+```
+    client.add_event_handler(prueba, events.NewMessage(pattern='/prueba'))  
+    client.add_event_handler(renovar, events.NewMessage(pattern=re.compile(r'^/renovar'), from_users = myid))
+    client.add_event_handler(lista, events.NewMessage(pattern='/lista', from_users = myid))    
+    client.add_event_handler(miembroid, events.NewMessage(pattern=re.compile(r'^/id'), from_users = myid))
+    client.add_event_handler(revisa, events.NewMessage(pattern='/revisa', from_users = [admin1, admin2]))
+
+```
+
+Elegí iniciar los handlers así en lugar de usar el adorno @ para el cliente de telegram por que más adelante vamos a necesitar quitar los handlers y volverlos a activar para evitar conflictos con la base de datos.
+
+
+Ahora se lade un loop para que la funcion revisar_loop() se ejecute cada dos horas sin necesidad de que el usuario envíe el comando /revisar
+```
+    while True:
+        await asyncio.sleep(7200)
+        await revisa_loop()
+```
+
 
 Finalmente añadimos el task asincronico de la funcion main() y pedimos que el bot corra hasta que se desconecte. Como no hay ninguna linea que obligue la desconeccion, el bot correra para siempre.
 
@@ -320,6 +341,8 @@ Se pueden agregar miembros al canal de cualquier manera, este bot va a escanear 
   Envía una lista con los miembros del canal
 * /prueba
   envía un mensaje simple, sirve para saber si el bot está en linea
+*/revisa
+  Ejecuta la funcion revisar_loop() para revisar si hay nuevos miembros, si alguno esta proximo a ser expulsado o expulsar a alguien.
 
 El script debe correr en una computadora que siempre este prendida y tenga python 3. Lo he provado con las versiones 3.10 y 3.11. Esta maquina puede ser un servidro o alguna computadora que siempre tengan prendida, como una raspberry pi.  el archivo eventlog.log ira guardando un registro de las acciones que se toman para tenerlo como referencia.
 
