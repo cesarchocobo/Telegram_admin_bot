@@ -341,7 +341,7 @@ Se pueden agregar miembros al canal de cualquier manera, este bot va a escanear 
   Envía una lista con los miembros del canal
 * /prueba
   envía un mensaje simple, sirve para saber si el bot está en linea
-*/revisa
+* /revisa
   Ejecuta la funcion revisar_loop() para revisar si hay nuevos miembros, si alguno esta proximo a ser expulsado o expulsar a alguien.
 
 El script debe correr en una computadora que siempre este prendida y tenga python 3. Lo he provado con las versiones 3.10 y 3.11. Esta maquina puede ser un servidro o alguna computadora que siempre tengan prendida, como una raspberry pi.  el archivo eventlog.log ira guardando un registro de las acciones que se toman para tenerlo como referencia.
