@@ -7,11 +7,13 @@ import logging
 import re
 
 api_id = 12345
-api_hash = 'your_hash'
-bottoken = 'your_tokken'
+api_hash = 'myhash'
+bottoken = 'mytokken'
 
+# We have to manually call "start" if we want an explicit bot token
 client = TelegramClient('bot', api_id, api_hash).start(bot_token=bottoken)
-client_myid = TelegramClient('anon', api_id, api_hash)
+
+
 
 c_loop = asyncio.Event()
 
@@ -22,9 +24,10 @@ async def main():
 
     logging.basicConfig(filename='eventlog.log', encoding='utf-8', level=logging.INFO, format='%(asctime)s %(message)s')
     logging.basicConfig()
-    myid = await client.get_entity(178289)
-    canal = await client.get_entity(00000)
-    
+    admin1 = await client.get_entity(123456)
+    admin2 = await client.get_entity(1234567891)
+    canal= await client.get_entity(1234564123)
+    flag = True
 
     async def renovar(event_reno):
         texto_reno = event_reno.raw_text
@@ -75,27 +78,19 @@ async def main():
             else:
                 username = miembro_id.username
             if lista_id[2] in miembro_id.first_name:
-                await client.send_message(myid, miembro_id.first_name + ' ' + last + ' usuario: ' + username)
-                await client.send_message(myid, str(miembro_id.id))
+                await client.send_message(admin1, miembro_id.first_name + ' ' + last + ' usuario: ' + username)
+                await client.send_message(admin1, str(miembro_id.id))
 
     async def lista(event_lista):
         await event_lista.reply('Esta es la lista de miembros')
         async for miembro_l in client.iter_participants(canal):
-            await client.send_message(myid, miembro_l.first_name)
+            await client.send_message(admin1, miembro_l.first_name)
 
     async def prueba(event_prueba):
-        await client.send_message(myid, 'la prueba se ejecutó con exito')
+        await event_prueba.reply('la prueba se ejecutó con exito')
     
-    
-
-    client.add_event_handler(prueba, events.NewMessage(pattern='/prueba'))  
-    client.add_event_handler(renovar, events.NewMessage(pattern=re.compile(r'^/renovar'), from_users = myid))
-    client.add_event_handler(lista, events.NewMessage(pattern='/lista', from_users = myid))    
-    client.add_event_handler(miembroid, events.NewMessage(pattern=re.compile(r'^/id'), from_users = myid))  
-
-    while True:
-        await asyncio.sleep(7200)
-
+    async def revisa_loop():
+        client.remove_event_handler(revisa)
         client.remove_event_handler(renovar)
         client.remove_event_handler(lista)
         client.remove_event_handler(miembroid)
@@ -121,29 +116,21 @@ async def main():
                 await client.kick_participant(canal, kick)
                 dfd = dfd.drop([i])
                 logging.info(str(kick.first_name) + ' fue expulsado. ID: ' + str(kick.id))
-                await client.send_message(myid, 'La suscripción de '+ kick.first_name + ' terminó')
+                await client.send_message(admin1, 'La suscripción de '+ kick.first_name + ' terminó')
+                #await client.send_message(bebe, 'La suscripción de '+ kick.first_name + ' terminó')
 ######################## Anuncio #########
             if df.loc[i, 'Final'] < datetime.now() + timedelta(days = 3) and df.loc[i, 'Anuncio'] == 0:
                 dfd.at[i, 'Anuncio'] = 1
-                
-                await client_myid.start()
-                await client_myid.send_message(kick, 'Tu suscripcion a termina en 3 dias')
-                await client_myid.disconnect()
-
-                await client.send_message(myid, 'La suscripción de '+ kick.first_name + ' termina en 3 dias')
+                await client.send_message(admin1, 'La suscripción de '+ kick.first_name + ' termina en 3 dias')
                 logging.info(str(kick.first_name) + 'fue avisado. ID: ' +  str(kick.id))
         df = dfd
         df.to_csv("datos.csv", index=False)
-
-       
-
-
 
         async for miembro in client.iter_participants(canal):
             c_loop.clear()
             if miembro.id not in df['Usuario'].values :
                 nuevo = miembro
-                await client.send_message(myid, nuevo.first_name + ' se ha unido al canal. ¿Por cuántos meses?')
+                await client.send_message(admin1, nuevo.first_name + ' se ha unido al canal GEA Angy. ¿Por cuántos meses?')
                 logging.info('Se detectó a ' + str(nuevo.first_name) + ' como nuevo miembro. ID: ' + str(nuevo.id))
 
                 @client.on(events.NewMessage())
@@ -165,11 +152,30 @@ async def main():
                 await c_loop.wait()
 
         client.add_event_handler(prueba, events.NewMessage(pattern='/prueba'))  
-        client.add_event_handler(renovar, events.NewMessage(pattern=re.compile(r'^/renovar'), from_users = myid))
-        client.add_event_handler(lista, events.NewMessage(pattern='/lista', from_users = myid))    
-        client.add_event_handler(miembroid, events.NewMessage(pattern=re.compile(r'^/id'), from_users = myid))  
+        client.add_event_handler(renovar, events.NewMessage(pattern=re.compile(r'^/renovar'), from_users = admin1))
+        client.add_event_handler(lista, events.NewMessage(pattern='/lista', from_users = admin1))    
+        client.add_event_handler(miembroid, events.NewMessage(pattern=re.compile(r'^/id'), from_users = admin1))
+        client.add_event_handler(revisa, events.NewMessage(pattern='/revisa', from_users = [admin1, admin2]))   
 
 
+    async def revisa(event_revisa):
+        await event_revisa.reply('Inicia revision')
+        await revisa_loop()
+        await event_revisa.reply('Terminó revision')    
+
+    client.add_event_handler(prueba, events.NewMessage(pattern='/prueba'))  
+    client.add_event_handler(revisa, events.NewMessage(pattern='/revisa', from_users = [admin1, admin2]))   
+    client.add_event_handler(renovar, events.NewMessage(pattern=re.compile(r'^/renovar'), from_users = admin1))
+    client.add_event_handler(lista, events.NewMessage(pattern='/lista', from_users = [admin1, admin2]))    
+    client.add_event_handler(miembroid, events.NewMessage(pattern=re.compile(r'^/id'), from_users = admin1))
+
+
+
+
+    while True:
+        await asyncio.sleep(7200)
+        await revisa_loop()
+             
 
 
 with client:
